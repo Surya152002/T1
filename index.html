@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Rolling Chair Gyroscope</title>
+    <style>
+      #chair {
+        width: 200px;
+        height: 200px;
+        background: #ccc;
+        border-radius: 50%;
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform-style: preserve-3d;
+        transform: translateX(-50%) translateY(-50%) rotateX(0deg) rotateY(0deg);
+        transition: transform 0.1s ease-out;
+      }
+      #sensor {
+        position: absolute;
+        top: 20px;
+        left: 20px;
+        font-size: 24px;
+        font-weight: bold;
+        color: #333;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Rolling Chair Gyroscope</h1>
+    <button onclick="connectBluetooth()">Connect to Bluetooth</button>
+    <button onclick="sendNotification()">Send Notification</button>
+    <div id="chair"></div>
+    <div id="sensor">
+      Sensor values:
+      X: <span id="sensor-x">0.00</span>,
+      Y: <span id="sensor-y">0.00</span>
+    </div>
+    <script>
+      // Connecting to Bluetooth device
+      const deviceName = "My Device"; // Change this to the name of your Bluetooth device
+      let bluetoothDevice;
+      async function connectBluetooth() {
+        try {
+          const device = await navigator.bluetooth.requestDevice({
+            filters: [{ name: deviceName }]
+          });
+          const server = await device.gatt.connect();
+          bluetoothDevice = device;
+          console.log("Connected to " + deviceName);
+        } catch (error) {
+          console.error("Bluetooth connection error", error);
+        }
+      }
+
+      // Sending notifications via Bluetooth
+      async function sendNotification() {
+        try {
+          const service = await bluetoothDevice.gatt.getPrimaryService("notification_service_uuid");
+          const characteristic = await service.getCharacteristic("notification_characteristic_uuid");
+          const value = new TextEncoder().encode("Notification message");
+          await characteristic.writeValue(value);
+          console.log("Notification sent");
+        } catch (error) {
+          console.error("Bluetooth notification error", error);
+        }
+      }
+
+      // Visualizing the rolling chair with sensor values
+      const chair = document.getElementById("chair");
+      const sensorX = document.getElementById("sensor-x");
+      const sensorY = document.getElementById("sensor-y");
+      window.addEventListener("deviceorientation", e => {
+        let x = e.gamma; // The device's x-axis rotation in degrees
+        let y = e.beta; // The device's y-axis rotation in degrees
+        chair.style.transform = `rotateX(${x}deg) rotateY(${y}deg)`;
+        sensorX.innerHTML = x.toFixed(2);
+        sensorY.innerHTML = y.toFixed(2);
+      });
+    </script>
+  </body>
+</html>
